@@ -151,6 +151,8 @@ class CMakePreset:
             outString = outString + '-G \"Visual Studio 14 2015\"'
         elif self.compiler == 'vc15':
             outString = outString + '-G \"Visual Studio 15 2017\"'
+        elif self.compiler == 'vc16':
+            outString = outString + '-G \"Visual Studio 16 2019\"'
         elif self.compiler == 'xcode':
             outString = outString + '-G Xcode'
         elif self.targetPlatform == 'android':
@@ -325,7 +327,7 @@ def presetProvided(pName):
     cmakeParams = cmakeParams + ' ' + getCommonParams()
     cmakeParams = cmakeParams + ' ' + parsedPreset.getCMakeSwitches()
     cmakeParams = cmakeParams + ' ' + parsedPreset.getCMakeParams()
-    # print(cmakeParams)
+    print(cmakeParams)
 
     if os.path.isfile(os.environ['PHYSX_ROOT_DIR'] + '/compiler/internal/CMakeLists.txt'):
         cmakeMasterDir = 'internal'
