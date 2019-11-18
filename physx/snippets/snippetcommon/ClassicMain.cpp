@@ -84,7 +84,7 @@ struct A3DTransform
 
 int main(int argc, char** argv)
 {
-	if (true)
+	if (false)
 	{
 		A3DTransform transform{ physx::PxVec3(1, 2, 3), 65536 / 4 };
 		auto pos_global = transform.LocalPos2GlobalPos(physx::PxVec3(2, 2, 2));
