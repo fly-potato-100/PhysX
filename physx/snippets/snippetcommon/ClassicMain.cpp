@@ -27,9 +27,76 @@
 // Copyright (c) 2004-2008 AGEIA Technologies, Inc. All rights reserved.
 // Copyright (c) 2001-2004 NovodeX AG. All rights reserved.  
 
+#include <iostream>
+#include "PxPhysicsAPI.h"
+
 extern int snippetMain(int, const char*const*);
+
+template <class T>
+constexpr T PI_REAL = T(3.1415926535897932385);
+constexpr float PI = PI_REAL<float>;
+
+template <int RANGE>
+constexpr float Range2Rad(float fValue)
+{
+	return fValue * (2 * PI) / RANGE;
+}
+
+template <int RANGE>
+constexpr float Rad2Range(float fRad)
+{
+	return fRad * RANGE / (2 * PI);
+}
+
+constexpr auto Dir2Rad = Range2Rad<65536>;
+constexpr auto Rad2Dir = Rad2Range<65536>;
+
+struct A3DTransform
+{
+	physx::PxVec3 pos;
+	unsigned short dir = 0;
+
+	void GetPhyTransform(physx::PxTransform& output) const
+	{
+		float rad_dir = Dir2Rad(dir);
+		physx::PxVec3 axis(.0f, -1.f, .0f);
+		output = physx::PxTransform(pos, physx::PxQuat(rad_dir, axis));
+	}
+
+	physx::PxVec3 LocalPos2GlobalPos(const physx::PxVec3& pos_local) const
+	{
+		physx::PxTransform transform;
+		GetPhyTransform(transform);
+
+		auto position_global = transform.transform(pos_local);
+		return position_global;
+	}
+
+	physx::PxVec3 GlobalPos2LocalPos(const physx::PxVec3& pos_global) const
+	{
+		physx::PxTransform transform;
+		GetPhyTransform(transform);
+
+		auto position_local = transform.transformInv(pos_global);
+		return position_local;
+	}
+};
 
 int main(int argc, char** argv)
 {
+	if (true)
+	{
+		A3DTransform transform{ physx::PxVec3(1, 2, 3), 65536 / 4 };
+		auto pos_global = transform.LocalPos2GlobalPos(physx::PxVec3(2, 2, 2));
+		auto pos_local = transform.GlobalPos2LocalPos(pos_global);
+		std::cout << "completed" << std::endl;
+		return 0;
+	}
+	if (false)
+	{
+		unsigned short dir = 65536 / 4;
+		std::cout << Dir2Rad(dir) << std::endl;
+		return 0;
+	}
 	return snippetMain(argc, argv);
 }
