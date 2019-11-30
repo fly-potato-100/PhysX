@@ -51,44 +51,69 @@ constexpr float Rad2Range(float fRad)
 constexpr auto Dir2Rad = Range2Rad<65536>;
 constexpr auto Rad2Dir = Rad2Range<65536>;
 
-struct A3DTransform
+class A3DTransform
 {
-	physx::PxVec3 pos;
-	unsigned short dir = 0;
+	physx::PxVec3 _pos;
+	physx::PxVec3 _axis;
+	float _angle = .0f;
+public:
+
+	void Set(const physx::PxVec3& pos, const physx::PxVec3& axis, float angle)
+	{
+		_pos = pos;
+		_axis = axis;
+		_axis.normalize();
+		_angle = angle;
+	}
+
+	void SetWithDir(const physx::PxVec3& pos, unsigned short dir)
+	{
+		_pos = pos;
+		_axis = physx::PxVec3(0, 1, 0);
+		_angle = Dir2Rad(dir);
+	}
 
 	void GetPhyTransform(physx::PxTransform& output) const
 	{
-		float rad_dir = Dir2Rad(dir);
-		physx::PxVec3 axis(.0f, -1.f, .0f);
-		output = physx::PxTransform(pos, physx::PxQuat(rad_dir, axis));
+		output.p = _pos;
+		output.q = physx::PxQuat(_angle, _axis).getConjugate();
 	}
 
-	physx::PxVec3 LocalPos2GlobalPos(const physx::PxVec3& pos_local) const
+	physx::PxVec3 ToParent(const physx::PxVec3& pos_child) const
 	{
 		physx::PxTransform transform;
 		GetPhyTransform(transform);
 
-		auto position_global = transform.transform(pos_local);
-		return position_global;
+		auto position_parent = transform.transform(pos_child);
+		return position_parent;
 	}
 
-	physx::PxVec3 GlobalPos2LocalPos(const physx::PxVec3& pos_global) const
+	physx::PxVec3 ToChild(const physx::PxVec3& pos_parent) const
 	{
 		physx::PxTransform transform;
 		GetPhyTransform(transform);
 
-		auto position_local = transform.transformInv(pos_global);
-		return position_local;
+		auto position_child = transform.transformInv(pos_parent);
+		return position_child;
 	}
 };
 
 int main(int argc, char** argv)
 {
+	if (true)
+	{
+		A3DTransform transform;
+		transform.Set(physx::PxVec3(0, 0, 0), physx::PxVec3(0, 1, 1), physx::PxHalfPi);
+		auto pos_global = transform.ToParent(physx::PxVec3(0, 0, 2));
+		std::cout << "completed" << std::endl;
+		return 0;
+	}
 	if (false)
 	{
-		A3DTransform transform{ physx::PxVec3(1, 2, 3), 65536 / 4 };
-		auto pos_global = transform.LocalPos2GlobalPos(physx::PxVec3(2, 2, 2));
-		auto pos_local = transform.GlobalPos2LocalPos(pos_global);
+		A3DTransform transform;
+		transform.SetWithDir(physx::PxVec3(0, 0, 0), 65536 / 4);
+		auto pos_global = transform.ToParent(physx::PxVec3(2, 2, 2));
+		auto pos_local = transform.ToChild(pos_global);
 		std::cout << "completed" << std::endl;
 		return 0;
 	}
