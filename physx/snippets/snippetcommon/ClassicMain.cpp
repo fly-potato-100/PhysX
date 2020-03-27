@@ -100,7 +100,7 @@ public:
 
 int main(int argc, char** argv)
 {
-	if (true)
+	if (false)
 	{
 		A3DTransform transform;
 		transform.Set(physx::PxVec3(0, 0, 0), physx::PxVec3(0, 1, 1), physx::PxHalfPi);

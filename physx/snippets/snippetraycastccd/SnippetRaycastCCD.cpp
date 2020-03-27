@@ -92,6 +92,52 @@ void createStack(const PxTransform& t, PxU32 size, PxReal halfExtent)
 	shape->release();
 }
 
+class ContactReportCallback : public PxSimulationEventCallback
+{
+	void onConstraintBreak(PxConstraintInfo* constraints, PxU32 count) { PX_UNUSED(constraints); PX_UNUSED(count); }
+	void onWake(PxActor** actors, PxU32 count) { PX_UNUSED(actors); PX_UNUSED(count); }
+	void onSleep(PxActor** actors, PxU32 count) { PX_UNUSED(actors); PX_UNUSED(count); }
+	void onTrigger(PxTriggerPair* pairs, PxU32 count) { PX_UNUSED(pairs); PX_UNUSED(count); }
+	void onAdvance(const PxRigidBody* const*, const PxTransform*, const PxU32) {}
+	void onContact(const PxContactPairHeader& pairHeader, const PxContactPair* pairs, PxU32 nbPairs)
+	{
+		PX_UNUSED(pairHeader);
+		PX_UNUSED(pairs);
+
+		++_count;
+		printf("onContact(%zu):nbPairs=%u.\n", _count, nbPairs);
+	}
+	size_t _count = 0;
+};
+
+ContactReportCallback gContactReportCallback;
+
+PxFilterFlags contactReportFilterShader(PxFilterObjectAttributes attributes0, PxFilterData filterData0,
+	PxFilterObjectAttributes attributes1, PxFilterData filterData1,
+	PxPairFlags& pairFlags, const void* constantBlock, PxU32 constantBlockSize)
+{
+	PX_UNUSED(attributes0);
+	PX_UNUSED(attributes1);
+	PX_UNUSED(filterData0);
+	PX_UNUSED(filterData1);
+	PX_UNUSED(constantBlockSize);
+	PX_UNUSED(constantBlock);
+
+	//
+	// Enable CCD for the pair, request contact reports for initial and CCD contacts.
+	// Additionally, provide information per contact point and provide the actor
+	// pose at the time of contact.
+	//
+
+	pairFlags = PxPairFlag::eCONTACT_DEFAULT
+		| PxPairFlag::eDETECT_CCD_CONTACT
+		| PxPairFlag::eNOTIFY_TOUCH_CCD
+		| PxPairFlag::eNOTIFY_TOUCH_FOUND
+		| PxPairFlag::eNOTIFY_CONTACT_POINTS
+		| PxPairFlag::eCONTACT_EVENT_POSE;
+	return PxFilterFlag::eDEFAULT;
+}
+
 void initPhysics(bool /*interactive*/)
 {
 	gFoundation = PxCreateFoundation(PX_PHYSICS_VERSION, gAllocator, gErrorCallback);
@@ -106,7 +152,10 @@ void initPhysics(bool /*interactive*/)
 	sceneDesc.gravity = PxVec3(0.0f, -9.81f, 0.0f);
 	gDispatcher = PxDefaultCpuDispatcherCreate(2);
 	sceneDesc.cpuDispatcher	= gDispatcher;
-	sceneDesc.filterShader	= PxDefaultSimulationFilterShader;
+	//sceneDesc.filterShader	= PxDefaultSimulationFilterShader;
+	sceneDesc.filterShader	= contactReportFilterShader;
+	sceneDesc.simulationEventCallback = &gContactReportCallback;
+	sceneDesc.ccdMaxPasses = 4;
 	gScene = gPhysics->createScene(sceneDesc);
 
 	PxPvdSceneClient* pvdClient = gScene->getScenePvdClient();

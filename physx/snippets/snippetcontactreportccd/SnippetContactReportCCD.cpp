@@ -231,14 +231,17 @@ void initScene()
 		return;
 
 	PxSphereGeometry sphereGeom(1.0f);
-	PxShape* sphereShape = PxRigidActorExt::createExclusiveShape(*gSphereActor, sphereGeom, *gMaterial);
+	PxBoxGeometry bosGeom(1, 1, 1);
+	PxShape* sphereShape = PxRigidActorExt::createExclusiveShape(*gSphereActor, bosGeom, *gMaterial);
+	sphereShape->setLocalPose(PxTransform(PxQuat(0.785, PxVec3(0,0,1))));
 
 	if (!sphereShape)
 		return;
 
 	PxRigidBodyExt::updateMassAndInertia(*gSphereActor, 1.0f);
 
-	PxReal velMagn = 900.0f;
+	//PxReal velMagn = 900.0f;
+	PxReal velMagn = 10.0f;
 	PxVec3 vel = PxVec3(-1.0f, -1.0f, 0.0f);
 	vel.normalize();
 	vel *= velMagn;
@@ -262,7 +265,7 @@ void initPhysics(bool /*interactive*/)
 	gDispatcher = PxDefaultCpuDispatcherCreate(numCores == 0 ? 0 : numCores - 1);
 	PxSceneDesc sceneDesc(gPhysics->getTolerancesScale());
 	sceneDesc.cpuDispatcher = gDispatcher;
-	sceneDesc.gravity = PxVec3(0, 0, 0);
+	sceneDesc.gravity = PxVec3(0, -2.8, 0);
 	sceneDesc.filterShader	= contactReportFilterShader;			
 	sceneDesc.simulationEventCallback = &gContactReportCallback;
 	sceneDesc.flags |= PxSceneFlag::eENABLE_CCD;
@@ -274,14 +277,15 @@ void initPhysics(bool /*interactive*/)
 	{
 		pvdClient->setScenePvdFlag(PxPvdSceneFlag::eTRANSMIT_CONSTRAINTS, true);
 	}
-	gMaterial = gPhysics->createMaterial(0.5f, 0.5f, 1.0f);
+	gMaterial = gPhysics->createMaterial(0.5f, 0.5f, 0.000001f);
 
 	initScene();
 }
 
 void stepPhysics(bool /*interactive*/)
 {
-	if (!gSimStepCount)
+	//if (!gSimStepCount)
+	if (true)
 	{
 		gScene->simulate(1.0f/60.0f);
 		gScene->fetchResults(true);
@@ -290,7 +294,17 @@ void stepPhysics(bool /*interactive*/)
 		if (gSphereActor)
 			gContactSphereActorPositions.push_back(gSphereActor->getGlobalPose().p);
 
-		gSimStepCount = 1;
+		++gSimStepCount;
+
+// 		if (gSimStepCount == 60)
+// 		{
+// 			gScene->removeActor(*gSphereActor);
+// 		}
+// 
+// 		if (gSimStepCount == 120)
+// 		{
+// 			gScene->addActor(*gSphereActor);
+// 		}
 	}
 }
 
