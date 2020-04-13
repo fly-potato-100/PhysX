@@ -141,6 +141,7 @@ private:
 	class Proxy
 	{
 	public:
+		virtual ~Proxy() {}
 		virtual const std::type_info& type_info() const = 0;
 		virtual Proxy *clone() const = 0;
 		virtual void release() = 0;
